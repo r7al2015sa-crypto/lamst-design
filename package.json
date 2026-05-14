@@ -1,13 +1,10 @@
 {
   "name": "lamst-design",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Lamst Design — Royal Saudi Wedding Invitations Platform",
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel --prod"
-  },
-  "dependencies": {
-    "@higgsfield/client": "latest"
   },
   "engines": {
     "node": ">=18.0.0"
