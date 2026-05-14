@@ -7,7 +7,7 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
-    "@higgsfield/client": "^0.2.2"
+    "@higgsfield/client": "latest"
   },
   "engines": {
     "node": ">=18.0.0"
