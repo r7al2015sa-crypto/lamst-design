@@ -1,6 +1,5 @@
 // /api/generate-calligraphy.js
-// Replicate API - Flux 1.1 Pro for Arabic calligraphy generation
-// Get token from: https://replicate.com/account/api-tokens
+// Replicate API - Ideogram V2 (best model for text/typography rendering)
 
 export const config = { maxDuration: 60 };
 
@@ -25,19 +24,19 @@ export default async function handler(req, res) {
   }
 
   const styleMap = {
-    'رومانسي كلاسيكي': 'romantic classical Diwani Arabic calligraphy with elegant flowing flourishes',
-    'ملكي فاخر': 'royal luxurious Thuluth Arabic calligraphy with intricate detailed strokes',
+    'رومانسي كلاسيكي': 'romantic classical Diwani Arabic calligraphy style with elegant flowing curves',
+    'ملكي فاخر': 'royal luxurious Thuluth Arabic calligraphy with majestic strokes',
     'حديث أنيق': 'modern elegant Arabic calligraphy with clean refined lines',
-    'تراثي عربي أصيل': 'traditional authentic Arabic Kufic-Thuluth blended calligraphy'
+    'تراثي عربي أصيل': 'traditional authentic Arabic Kufic-Thuluth calligraphy'
   };
   const styleDesc = styleMap[style] || styleMap['رومانسي كلاسيكي'];
 
-  const prompt = `Ultra-premium Arabic wedding calligraphy on PURE BLACK background. ONLY beautiful flowing metallic gold Arabic calligraphy showing these two Arabic names connected with an elegant ornate flourish: "${groomName} و ${brideName}". Style: ${styleDesc}. Gold ink #C9A961, soft golden glow, perfectly centered. NO English text, NO frames. PURE BLACK background. 4K masterpiece.`;
+  // Ideogram works best with explicit text instructions
+  const prompt = `Beautiful Arabic wedding calligraphy artwork on pure black background. The Arabic text "${groomName} و ${brideName}" written in elegant flowing metallic gold Arabic script. ${styleDesc}. The two names are connected by an ornate gold flourish in the middle. Gold ink color, soft golden glow effect, centered composition, masterpiece quality. Pure matte black background with no other elements.`;
 
   try {
-    // ── Submit prediction to Replicate ──
-    // Using Flux 1.1 Pro - excellent for text/typography
-    const submitRes = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions', {
+    // Using Ideogram V3 Turbo - best for text rendering
+    const submitRes = await fetch('https://api.replicate.com/v1/models/ideogram-ai/ideogram-v3-turbo/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${REPLICATE_TOKEN}`,
@@ -48,34 +47,32 @@ export default async function handler(req, res) {
         input: {
           prompt: prompt,
           aspect_ratio: '16:9',
-          output_format: 'png',
-          output_quality: 100,
-          safety_tolerance: 5,
-          prompt_upsampling: true
+          resolution: 'None',
+          magic_prompt_option: 'On',
+          style_type: 'General'
         }
       })
     });
 
     const data = await submitRes.json();
-    console.log('Replicate response:', JSON.stringify(data).substring(0, 300));
+    console.log('Replicate response:', JSON.stringify(data).substring(0, 500));
 
     if (!submitRes.ok) {
       return res.status(submitRes.status).json({
         error: 'فشل Replicate API',
-        detail: data.detail || data.error || 'Unknown error',
+        detail: data.detail || data.error || JSON.stringify(data),
         status: submitRes.status
       });
     }
 
-    // ── Handle response ──
-    // If "Prefer: wait" succeeded, output should be ready
+    // Handle response - Ideogram returns single URL string
     let imageUrl = null;
 
     if (data.status === 'succeeded' && data.output) {
       imageUrl = Array.isArray(data.output) ? data.output[0] : data.output;
     }
 
-    // If not ready, poll
+    // Poll if not ready
     if (!imageUrl && data.urls?.get) {
       for (let i = 0; i < 30 && !imageUrl; i++) {
         await new Promise(r => setTimeout(r, 2000));
