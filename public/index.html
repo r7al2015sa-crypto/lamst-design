@@ -505,40 +505,41 @@ async function renderCanvas(){
     ctx.fillText(text,x,y);ctx.shadowBlur=0;ctx.shadowOffsetY=0;
   }
 
-  // لا يوجد Congrats في أعلى الكرت — تُرسم مع المخطوطة فقط
-
   txt('يتشرف',cx,H*.33,{size:32,color:'rgba(255,255,255,.85)'});
   if(S.host)txt(S.host,cx,H*.375,{size:46,color:'#fff',weight:'600'});
   txt('بدعوتكم لحضور حفل زواج ابنه',cx,H*.42,{size:32,color:'rgba(255,255,255,.85)'});
 
-  // أسماء أكبر
+  // الشاب / على كريمة
   txt('الشاب',W*.73,H*.476,{size:30,color:'rgba(255,255,255,.8)'});
   txt('على كريمة',W*.27,H*.476,{size:30,color:'rgba(255,255,255,.8)'});
   txt(S.groom,W*.73,H*.522,{size:46,color:'#fff',weight:'600'});
   txt('و',cx,H*.522,{size:58,color:'rgba(255,255,255,.9)',family:'Amiri,serif'});
   txt(S.bride,W*.27,H*.522,{size:46,color:'#fff',weight:'600'});
 
-  // ── Congrats بين الأسماء والحروف (موزونة في المنتصف) ──
+  // ── الترتيب الصحيح: Congrats ثم الحروف ──
+  // Congrats تبدأ من H*0.565 (بعد الأسماء بمسافة كافية)
+  // الحروف تبدأ من H*0.625 (بعد Congrats بمسافة 30px)
   const congratsImg = await loadImg('/assets/Congrats.png');
-  // الحروف تبدأ من H*0.615 — Congrats تُرسم فوقها بمسافة 30px
-  const callyTop = H*.625;
-  const callyH   = H*.13;
-  const congratsY = callyTop - 30; // مرجع تحسب منه Congrats لأعلى
+  const callyTop = H*.635; // بداية الحروف
+  const callyH   = H*.125;
 
-  if(congratsImg){
-    const cw2=580, ch2=Math.round(cw2*111/784);
-    // تُرسم بين الأسماء والحروف — منتصف المسافة
-    const midGap = (callyTop - H*.545) / 2; // منتصف المسافة بين الأسماء والحروف
-    const congratsDrawY = H*.545 + midGap - ch2/2;
-    ctx.drawImage(congratsImg, cx-cw2/2, congratsDrawY, cw2, ch2);
+  if(congratsImg && congratsImg.naturalWidth > 0){
+    // نحافظ على أبعاد Congrats الحقيقية (784x111)
+    const cw2 = 560;
+    const ch2 = Math.round(cw2 * congratsImg.naturalHeight / congratsImg.naturalWidth);
+    const congratsDrawY = callyTop - ch2 - 30; // 30px فوق الحروف
+    ctx.drawImage(congratsImg, cx - cw2/2, congratsDrawY, cw2, ch2);
   }
 
-  // ── الحروف (callyUrl) ──
+  // الحروف المخطوطة
   if(S.callyUrl){
-    const ci=await loadImg(S.callyUrl);
-    if(ci&&ci.naturalWidth>0){
-      const cw=W*.68,cx2=(W-cw)/2;
-      ctx.save();ctx.globalCompositeOperation='screen';ctx.drawImage(ci,cx2,callyTop,cw,callyH);ctx.restore();
+    const ci = await loadImg(S.callyUrl);
+    if(ci && ci.naturalWidth > 0){
+      const cw = W*.68, cx2 = (W - cw)/2;
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.drawImage(ci, cx2, callyTop, cw, callyH);
+      ctx.restore();
     }
   }
 
