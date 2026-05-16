@@ -76,7 +76,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         prompt:               prompt,
-        aspect_ratio:         'ASPECT_16_9',
+        aspect_ratio:         '16x9',
         style_type:           'DESIGN',   // أفضل لـ typography والخطوط
         magic_prompt_option:  'OFF',      // نتحكم بالبرومبت بأنفسنا
         rendering_speed:      'QUALITY'   // أعلى جودة
