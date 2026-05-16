@@ -560,19 +560,8 @@ async function renderCanvas(){
   if(S.venue)txt(S.venue,W*.72,iy+55,{size:26,color:'#ffffff'});
   if(S.city)txt(S.city,W*.72,iy+88,{size:21,color:'rgba(255,255,255,.75)'});
 
-  // ── باركود QR في المنتصف بين الأيقونتين ──
-  const qrH = S.qrUrl ? 165 : 0;
-  if(S.qrUrl){
-    const qrImg=await loadImg(S.qrUrl);
-    if(qrImg&&qrImg.naturalWidth>0){
-      // يبدأ من مستوى الأيقونات
-      ctx.drawImage(qrImg,cx-qrH/2,iy-20,qrH,qrH);
-      txt('امسح للموقع',cx,iy-20+qrH+16,{size:19,color:'rgba(255,255,255,.5)'});
-    }
-  }
-
   // فاصل عمودي — يمتد بطول يشمل الباركود إن وجد
-  const lineH = qrH>0 ? qrH+60 : 140;
+  const lineH = 140;
   const lg=ctx.createLinearGradient(cx,iy-30,cx,iy+lineH);
   lg.addColorStop(0,'transparent');lg.addColorStop(.5,'rgba(255,255,255,.25)');lg.addColorStop(1,'transparent');
   ctx.strokeStyle=lg;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,iy-30);ctx.lineTo(cx,iy+lineH);ctx.stroke();
