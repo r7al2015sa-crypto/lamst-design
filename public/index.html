@@ -584,6 +584,25 @@ async function renderCanvas(){
   if(S.gregDate)txt(S.gregDate,W*.28,iy+82,{size:21,color:'rgba(255,255,255,.75)'});
   if(S.gregTime)txt(S.gregTime,W*.28,iy+110,{size:21,color:'rgba(255,255,255,.75)'});
 
+
+  // ── QR في زاوية اليمين تحت ──
+  if(S.qrUrl){
+    const qrImg=await loadImg(S.qrUrl);
+    if(qrImg&&qrImg.naturalWidth>0){
+      const qs=155;
+      const qrX=W-qs-45;
+      const qrY=H-qs-130;
+      ctx.save();
+      ctx.fillStyle='rgba(0,0,0,0.55)';
+      ctx.beginPath();
+      ctx.roundRect(qrX-10,qrY-10,qs+20,qs+36,10);
+      ctx.fill();
+      ctx.restore();
+      ctx.drawImage(qrImg,qrX,qrY,qs,qs);
+      txt('امسح للموقع',qrX+qs/2,qrY+qs+16,{size:18,color:'rgba(255,255,255,.5)',shadow:false});
+    }
+  }
+
   // مخطوطة حضوركم شرف لنا — بدون stretch، نسبة أبعاد حقيقية
   const honor=await loadImg('/assets/honor.png');
   if(honor&&honor.naturalWidth>0){
