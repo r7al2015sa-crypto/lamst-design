@@ -505,7 +505,6 @@ async function renderCanvas(){
     ctx.fillText(text,x,y);ctx.shadowBlur=0;ctx.shadowOffsetY=0;
   }
 
-  // لا يوجد Congrats في أعلى الكرت — تُرسم مع المخطوطة فقط
 
   txt('يتشرف',cx,H*.33,{size:32,color:'rgba(255,255,255,.85)'});
   if(S.host)txt(S.host,cx,H*.375,{size:46,color:'#fff',weight:'600'});
@@ -518,23 +517,7 @@ async function renderCanvas(){
   txt('و',cx,H*.522,{size:58,color:'rgba(255,255,255,.9)',family:'Amiri,serif'});
   txt(S.bride,W*.27,H*.522,{size:46,color:'#fff',weight:'600'});
 
-  // Congrats + الحروف — بمسافة واضحة 50px
-  const callyTop = H*.565;
-  const callyH   = H*.13;
 
-  if(S.callyUrl){
-    const ci=await loadImg(S.callyUrl);
-    if(ci&&ci.naturalWidth>0){
-      const cw=W*.68,cx2=(W-cw)/2;
-      // Congrats فوق الحروف بمسافة 50px
-      const congrats2=await loadImg('/assets/Congrats.png');
-      if(congrats2){
-        const cw2=580,ch2=Math.round(cw2*111/784);
-        ctx.drawImage(congrats2,cx-cw2/2,callyTop-ch2-50,cw2,ch2);
-      }
-      ctx.save();ctx.globalCompositeOperation='screen';ctx.drawImage(ci,cx2,callyTop,cw,callyH);ctx.restore();
-    }
-  }
 
   // وتناول طعام العشاء — تحت الحروف مباشرة بفراغ مناسب
   const dinnerY = callyTop + callyH + 55;
