@@ -1,7 +1,6 @@
 // /api/generate-calligraphy.js
-// Ideogram V3 API - أفضل نموذج في العالم لتوليد النصوص
+// Ideogram V3 API — أفضل نموذج للنصوص العربية
 // الحصول على API key: https://developer.ideogram.ai
-// التوثيق: https://developer.ideogram.ai/api-reference/api-reference/generate-v3
 
 export const config = { maxDuration: 60 };
 
@@ -25,30 +24,50 @@ export default async function handler(req, res) {
     });
   }
 
-  // بناء البرومبت المثالي للمخطوطة العربية
+  // ── أنماط المخطوطة ──
   const styleMap = {
-    'رومانسي كلاسيكي': 'romantic classical Diwani Arabic calligraphy with elegant flowing flourishes and curves',
-    'ملكي فاخر': 'royal luxurious Thuluth Arabic calligraphy with majestic detailed strokes and ornate design',
-    'حديث أنيق': 'modern elegant Arabic calligraphy with clean refined lines and contemporary aesthetic',
-    'تراثي عربي أصيل': 'traditional authentic Naskh Arabic calligraphy with heritage Saudi artistic style'
+    'رومانسي كلاسيكي': 'classical Arabic Naskh calligraphy font, elegant and refined',
+    'ملكي فاخر':        'royal Arabic Thuluth calligraphy font, majestic and bold',
+    'حديث أنيق':        'modern clean Arabic calligraphy font, minimal and elegant',
+    'تراثي عربي أصيل':  'traditional Arabic Ruqah calligraphy font, authentic heritage style'
   };
   const styleDesc = styleMap[style] || styleMap['رومانسي كلاسيكي'];
 
-  // Ideogram V3 يتعامل مع النصوص بشكل ممتاز - نحدد الأسماء بدقة بين علامات اقتباس
-  const prompt = `Beautiful Arabic wedding calligraphy artwork on pure matte black background. \
-The Arabic names "${groomName}" and "${brideName}" written together in magnificent flowing metallic gold Arabic script, \
-connected by an ornate decorative flourish "و" in the center. \
-Style: ${styleDesc}. \
-The calligraphy should be perfectly readable Arabic text with authentic letter forms. \
-Color: rich metallic gold #C9A961 with soft luminous glow effect. \
-Composition: centered on black background, wide landscape format. \
-No background patterns, no borders, no decorative frames. Pure matte black background only. \
-The text must be the focal point. Premium quality artwork.`;
+  // ── Prompt محسّن للحصول على مخطوطة مستقيمة واحترافية ──
+  const prompt = [
+    // الهدف الرئيسي
+    `Arabic wedding calligraphy artwork on pure solid matte black background (#000000).`,
+
+    // النصوص بدقة — مع تحديد الاتجاه صراحة
+    `Display ONLY these two Arabic names in large gold calligraphy:`,
+    `Right side: "${groomName}"`,
+    `Left side: "${brideName}"`,
+    `Center: the Arabic letter "و" as an elegant gold ornament connecting both names.`,
+
+    // إلزامية الاستقامة — أهم جزء
+    `CRITICAL TYPOGRAPHY RULES:`,
+    `- Text must be PERFECTLY HORIZONTAL with ZERO tilt, ZERO rotation, ZERO diagonal angle.`,
+    `- All text baseline must be completely flat and level, parallel to the bottom edge.`,
+    `- Text reads right-to-left in proper Arabic direction.`,
+    `- No slanted, italic, or angled letterforms. Upright vertical strokes only.`,
+
+    // الأسلوب والألوان
+    `Style: ${styleDesc}.`,
+    `Color: rich metallic gold (#C9A961) with subtle luminous glow, on pure black.`,
+
+    // التكوين
+    `Composition: perfectly centered, balanced, wide landscape format.`,
+    `Both names must be the same size and at the same vertical level.`,
+
+    // ما لا نريده
+    `No background texture, no ornamental borders, no frames, no decorations.`,
+    `No English text. No watermarks. Pure black background only.`,
+    `Ultra high quality, sharp crisp letterforms, premium wedding invitation style.`
+  ].join(' ');
 
   try {
-    console.log(`Generating calligraphy for: ${groomName} و ${brideName}`);
+    console.log(`Generating for: ${groomName} و ${brideName} | Style: ${style}`);
 
-    // Ideogram V3 API - endpoint رسمي
     const response = await fetch('https://api.ideogram.ai/v1/ideogram-v3/generate', {
       method: 'POST',
       headers: {
@@ -56,17 +75,17 @@ The text must be the focal point. Premium quality artwork.`;
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        prompt: prompt,
-        aspect_ratio: 'ASPECT_16_9',
-        style_type: 'DESIGN',        // DESIGN أفضل للخطوط والـ typography
-        magic_prompt_option: 'OFF',  // OFF عشان نتحكم بالبرومبت بدقة
-        rendering_speed: 'QUALITY'   // أعلى جودة
+        prompt:               prompt,
+        aspect_ratio:         'ASPECT_16_9',
+        style_type:           'DESIGN',   // أفضل لـ typography والخطوط
+        magic_prompt_option:  'OFF',      // نتحكم بالبرومبت بأنفسنا
+        rendering_speed:      'QUALITY'   // أعلى جودة
       })
     });
 
     const data = await response.json();
-    console.log('Ideogram response status:', response.status);
-    console.log('Ideogram response:', JSON.stringify(data).substring(0, 400));
+    console.log('Status:', response.status);
+    console.log('Response:', JSON.stringify(data).substring(0, 400));
 
     if (!response.ok) {
       return res.status(response.status).json({
@@ -83,12 +102,12 @@ The text must be the focal point. Premium quality artwork.`;
 
     if (!imageUrl) {
       return res.status(500).json({
-        error: 'لم يتم الحصول على صورة',
+        error: 'لم يتم استلام الصورة',
         debug: JSON.stringify(data).substring(0, 400)
       });
     }
 
-    console.log('✅ Success:', imageUrl.substring(0, 60));
+    console.log('✅ Success:', imageUrl.substring(0, 80));
 
     return res.status(200).json({
       success: true,
@@ -99,7 +118,7 @@ The text must be the focal point. Premium quality artwork.`;
     });
 
   } catch (err) {
-    console.error('Server error:', err);
+    console.error('Error:', err.message);
     return res.status(500).json({
       error: 'خطأ تقني',
       detail: err.message
