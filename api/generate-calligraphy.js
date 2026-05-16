@@ -1,5 +1,7 @@
 // /api/generate-calligraphy.js
-// Replicate API - Ideogram V2 (best model for text/typography rendering)
+// Ideogram V3 API - أفضل نموذج في العالم لتوليد النصوص
+// الحصول على API key: https://developer.ideogram.ai
+// التوثيق: https://developer.ideogram.ai/api-reference/api-reference/generate-v3
 
 export const config = { maxDuration: 60 };
 
@@ -15,96 +17,85 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'يُرجى إدخال اسم العريس والعروس' });
   }
 
-  const REPLICATE_TOKEN = process.env.REPLICATE_API_TOKEN;
-  if (!REPLICATE_TOKEN) {
+  const IDEOGRAM_KEY = process.env.IDEOGRAM_API_KEY;
+  if (!IDEOGRAM_KEY) {
     return res.status(500).json({
-      error: 'Replicate API غير مُهيّأ',
-      hint: 'أضف REPLICATE_API_TOKEN في Vercel'
+      error: 'Ideogram API غير مُهيّأ',
+      hint: 'أضف IDEOGRAM_API_KEY في Vercel Environment Variables'
     });
   }
 
+  // بناء البرومبت المثالي للمخطوطة العربية
   const styleMap = {
-    'رومانسي كلاسيكي': 'romantic classical Diwani Arabic calligraphy style with elegant flowing curves',
-    'ملكي فاخر': 'royal luxurious Thuluth Arabic calligraphy with majestic strokes',
-    'حديث أنيق': 'modern elegant Arabic calligraphy with clean refined lines',
-    'تراثي عربي أصيل': 'traditional authentic Arabic Kufic-Thuluth calligraphy'
+    'رومانسي كلاسيكي': 'romantic classical Diwani Arabic calligraphy with elegant flowing flourishes and curves',
+    'ملكي فاخر': 'royal luxurious Thuluth Arabic calligraphy with majestic detailed strokes and ornate design',
+    'حديث أنيق': 'modern elegant Arabic calligraphy with clean refined lines and contemporary aesthetic',
+    'تراثي عربي أصيل': 'traditional authentic Naskh Arabic calligraphy with heritage Saudi artistic style'
   };
   const styleDesc = styleMap[style] || styleMap['رومانسي كلاسيكي'];
 
-  // Ideogram works best with explicit text instructions
-  const prompt = `Beautiful Arabic wedding calligraphy artwork on pure black background. The Arabic text "${groomName} و ${brideName}" written in elegant flowing metallic gold Arabic script. ${styleDesc}. The two names are connected by an ornate gold flourish in the middle. Gold ink color, soft golden glow effect, centered composition, masterpiece quality. Pure matte black background with no other elements.`;
+  // Ideogram V3 يتعامل مع النصوص بشكل ممتاز - نحدد الأسماء بدقة بين علامات اقتباس
+  const prompt = `Beautiful Arabic wedding calligraphy artwork on pure matte black background. \
+The Arabic names "${groomName}" and "${brideName}" written together in magnificent flowing metallic gold Arabic script, \
+connected by an ornate decorative flourish "و" in the center. \
+Style: ${styleDesc}. \
+The calligraphy should be perfectly readable Arabic text with authentic letter forms. \
+Color: rich metallic gold #C9A961 with soft luminous glow effect. \
+Composition: centered on black background, wide landscape format. \
+No background patterns, no borders, no decorative frames. Pure matte black background only. \
+The text must be the focal point. Premium quality artwork.`;
 
   try {
-    // Using Ideogram V3 Turbo - best for text rendering
-    const submitRes = await fetch('https://api.replicate.com/v1/models/ideogram-ai/ideogram-v3-turbo/predictions', {
+    console.log(`Generating calligraphy for: ${groomName} و ${brideName}`);
+
+    // Ideogram V3 API - endpoint رسمي
+    const response = await fetch('https://api.ideogram.ai/v1/ideogram-v3/generate', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${REPLICATE_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'wait=60'
+        'Api-Key': IDEOGRAM_KEY,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        input: {
-          prompt: prompt,
-          aspect_ratio: '16:9',
-          resolution: 'None',
-          magic_prompt_option: 'On',
-          style_type: 'General'
-        }
+        prompt: prompt,
+        aspect_ratio: 'ASPECT_16_9',
+        style_type: 'DESIGN',        // DESIGN أفضل للخطوط والـ typography
+        magic_prompt_option: 'OFF',  // OFF عشان نتحكم بالبرومبت بدقة
+        rendering_speed: 'QUALITY'   // أعلى جودة
       })
     });
 
-    const data = await submitRes.json();
-    console.log('Replicate response:', JSON.stringify(data).substring(0, 500));
+    const data = await response.json();
+    console.log('Ideogram response status:', response.status);
+    console.log('Ideogram response:', JSON.stringify(data).substring(0, 400));
 
-    if (!submitRes.ok) {
-      return res.status(submitRes.status).json({
-        error: 'فشل Replicate API',
-        detail: data.detail || data.error || JSON.stringify(data),
-        status: submitRes.status
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: 'فشل Ideogram API',
+        detail: data.error || data.message || JSON.stringify(data),
+        status: response.status
       });
     }
 
-    // Handle response - Ideogram returns single URL string
-    let imageUrl = null;
-
-    if (data.status === 'succeeded' && data.output) {
-      imageUrl = Array.isArray(data.output) ? data.output[0] : data.output;
-    }
-
-    // Poll if not ready
-    if (!imageUrl && data.urls?.get) {
-      for (let i = 0; i < 30 && !imageUrl; i++) {
-        await new Promise(r => setTimeout(r, 2000));
-
-        const pollRes = await fetch(data.urls.get, {
-          headers: { 'Authorization': `Bearer ${REPLICATE_TOKEN}` }
-        });
-        if (!pollRes.ok) continue;
-        const pd = await pollRes.json();
-
-        if (pd.status === 'succeeded' && pd.output) {
-          imageUrl = Array.isArray(pd.output) ? pd.output[0] : pd.output;
-          break;
-        }
-        if (pd.status === 'failed' || pd.status === 'canceled') {
-          return res.status(500).json({
-            error: 'فشل التوليد',
-            detail: pd.error || pd.status
-          });
-        }
-      }
-    }
+    // استخراج رابط الصورة
+    const imageUrl = data.data?.[0]?.url
+                  || data.images?.[0]?.url
+                  || data.url;
 
     if (!imageUrl) {
-      return res.status(504).json({ error: 'انتهت مهلة التوليد، حاول مرة أخرى' });
+      return res.status(500).json({
+        error: 'لم يتم الحصول على صورة',
+        debug: JSON.stringify(data).substring(0, 400)
+      });
     }
+
+    console.log('✅ Success:', imageUrl.substring(0, 60));
 
     return res.status(200).json({
       success: true,
       imageUrl,
       style,
-      names: `${groomName} و ${brideName}`
+      names: `${groomName} و ${brideName}`,
+      model: 'ideogram-v3'
     });
 
   } catch (err) {
