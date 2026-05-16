@@ -1,0 +1,6 @@
+{
+  "name": "lamst-design",
+  "version": "5.0.0",
+  "description": "Lamst Design — Royal Saudi Wedding Invitations",
+  "engines": { "node": ">=18.0.0" }
+}
