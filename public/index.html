@@ -773,6 +773,60 @@ function support(){
 function reset(){if(!confirm('متأكد؟ سيتم مسح كل البيانات.'))return;Object.assign(S,{groom:'',bride:'',host:'',hijri:'',gregDate:'',gregTime:'',gregDay:'',venue:'',city:'',noPhone:false,style:'royal-gold',used:0,max:3,paid:false,callyUrl:null,qrUrl:null});document.getElementById('upgradeBox').style.display='none';document.getElementById('acceptBtn').style.display='none';document.getElementById('qrBtnFloat').style.display='none';document.getElementById('qrInlineWrap').style.display='none';document.getElementById('mapsUrlInline').value='';document.getElementById('resultBox').innerHTML='<div class="empty"><div class="empty-icon">❦</div><div class="empty-text">اضغط زر التوليد</div></div>';updateAtt();goStep(1);}
 
 updateAtt();
+
+// ════════════════════════════════════════
+// حماية المحتوى
+// ════════════════════════════════════════
+
+// 1. منع الضغط بالزر الأيمن
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// 2. منع سحب الصور
+document.addEventListener('dragstart', e => e.preventDefault());
+
+// 3. منع تحديد النص
+document.addEventListener('selectstart', e => e.preventDefault());
+
+// 4. منع اختصارات لوحة المفاتيح (Save, Print, Inspect)
+document.addEventListener('keydown', e => {
+  // Ctrl+S, Ctrl+U, Ctrl+P, F12, Ctrl+Shift+I, Ctrl+Shift+J
+  if(
+    (e.ctrlKey && ['s','u','p'].includes(e.key.toLowerCase())) ||
+    e.key === 'F12' ||
+    (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase()))
+  ){
+    e.preventDefault();
+    toast('⚠️ هذا المحتوى محمي بحقوق الملكية', 3000);
+    return false;
+  }
+});
+
+// 5. منع فتح الصور في تبويب جديد — تغيير src لـ canvas بدل URL مباشر
+// الصور في الموقع تُعرض عبر Canvas وليس img src مباشر
+// لذا لا يوجد URL مباشر يمكن فتحه
+
+// 6. طبقة شفافة فوق الصور لمنع السحب والنقر
+document.querySelectorAll('img').forEach(img => {
+  img.style.pointerEvents = 'none';
+  img.setAttribute('draggable', 'false');
+});
+
+// مراقبة الصور الجديدة
+const imgObserver = new MutationObserver(() => {
+  document.querySelectorAll('img:not([draggable="false"])').forEach(img => {
+    img.style.pointerEvents = 'none';
+    img.setAttribute('draggable', 'false');
+  });
+});
+imgObserver.observe(document.body, {childList: true, subtree: true});
+
+// 7. منع Print Screen (تنبيه فقط)
+window.addEventListener('keyup', e => {
+  if(e.key === 'PrintScreen'){
+    toast('⚠️ هذا المحتوى محمي بحقوق الملكية لمسة | Lamst Design', 3000);
+  }
+});
+
 </script>
 </div><!-- /mainContent -->
 </body>
