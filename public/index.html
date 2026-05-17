@@ -149,6 +149,31 @@ body{background:var(--bg);color:var(--text);font-family:var(--ge);min-height:100
 </head>
 <body>
 
+<!-- ══ شاشة إدخال رقم الطلب ══ -->
+<div id="orderScreen" style="display:none;position:fixed;inset:0;z-index:9999;background:#050403;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;gap:20px;text-align:center">
+  <div style="font-size:50px">⚜️</div>
+  <div style="font-family:'Amiri',serif;font-size:36px;font-weight:700;background:linear-gradient(180deg,#F5E6B8,#C9A961,#8B6914);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">لمسة</div>
+  <div style="font-size:12px;color:#C9A961;letter-spacing:4px;opacity:.7">LAMST DESIGN · ROYAL INVITATIONS</div>
+  <div style="width:100%;max-width:360px;background:rgba(15,11,6,.8);border:1px solid rgba(201,169,97,.2);border-radius:8px;padding:28px 22px;margin-top:8px">
+    <p style="font-size:15px;color:#E8DCC0;margin-bottom:6px;line-height:1.8">أدخل رقم طلبك من سلة<br><span style="font-size:12px;color:#6B5A3F">ستجده في إيميل تأكيد الطلب</span></p>
+    <input id="orderInput" type="number" inputmode="numeric"
+      style="width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(201,169,97,.3);color:#E8DCC0;font-size:22px;padding:14px;text-align:center;border-radius:4px;outline:none;margin:16px 0;letter-spacing:3px;direction:ltr"
+      placeholder="260463882"
+      onkeydown="if(event.key==='Enter')verifyOrder()">
+    <div id="orderErr" style="display:none;color:#E07070;font-size:13px;margin-bottom:12px"></div>
+    <button onclick="verifyOrder()"
+      style="width:100%;padding:14px;background:linear-gradient(135deg,#8B6914,#C9A961,#E5C77C,#C9A961,#8B6914);background-size:200%;color:#0A0805;font-weight:700;font-size:16px;border:none;border-radius:30px;cursor:pointer;font-family:'GE SS Two','Tajawal',sans-serif">
+      ابدأ تصميم دعوتك ✦
+    </button>
+  </div>
+  <div style="font-size:12px;color:#6B5A3F;margin-top:8px">
+    مشكلة؟
+    <a href="https://wa.me/966536213415" style="color:#C9A961">تواصل مع الدعم</a>
+  </div>
+</div>
+
+<!-- ══ المحتوى الرئيسي ══ -->
+<div id="mainContent">
 <div class="bg">
   <svg viewBox="0 0 1200 1800" xmlns="http://www.w3.org/2000/svg">
     <text x="50"  y="200"  font-family="Amiri,serif" font-size="100" fill="#C9A961" transform="rotate(-12 50 200)">بارك الله لهما</text>
@@ -265,7 +290,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--ge);min-height:100
     </div>
     <div class="attempts-row">
       <span class="att-text">المحاولات:</span>
-      <div class="dot" id="d1"></div><div class="dot" id="d2"></div><div class="dot" id="d3"></div>
+      <div class="dot" id="d1"></div><div class="dot" id="d2"></div><div class="dot" id="d3"></div><div class="dot" id="d4"></div><div class="dot" id="d5"></div><div class="dot" id="d6"></div>
     </div>
     <div class="remaining">متبقي <span id="remCount">3</span> محاولات مجانية</div>
     <div class="style-lbl">ستايل المخطوطة</div>
@@ -308,7 +333,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--ge);min-height:100
       <button class="btn-ghost" onclick="shareCard()">📤 مشاركة</button>
       <button class="btn-ghost" onclick="goStep(2)">✦ تعديل المخطوطة</button>
     </div>
-    <button class="btn-ghost danger" onclick="reset()" style="margin-top:14px">بدء دعوة جديدة</button>
+    <!-- زر بدء من جديد محذوف — دعوة واحدة لكل رابط -->
   </div>
 </div>
 </div>
@@ -331,8 +356,52 @@ body{background:var(--bg);color:var(--text);font-family:var(--ge);min-height:100
 <div class="toast" id="toast"></div>
 
 <script>
-const S={groom:'',bride:'',host:'',hijri:'',gregDate:'',gregTime:'',gregDay:'',venue:'',city:'',noPhone:false,style:'royal-gold',used:0,max:3,paid:false,callyUrl:null,qrUrl:null,musicPlaying:false,orderId:'order_'+Date.now()};
 const MONO_BASE='/assets/monograms';
+
+// ══════════════════════════════════════════════════
+// نظام الحماية: إدخال رقم الطلب من سلة
+// ══════════════════════════════════════════════════
+(function initProtection(){
+  // لو محفوظ مسبقاً — يكمل مباشرة
+  const saved = localStorage.getItem('lamst_order');
+  if(saved && saved.length >= 5){
+    return; // مسموح له
+  }
+
+  // إخفاء كل شي وإظهار شاشة إدخال رقم الطلب
+  document.addEventListener('DOMContentLoaded', function(){
+    const screen = document.getElementById('orderScreen');
+    const mainContent = document.getElementById('mainContent');
+    if(screen && mainContent){
+      mainContent.style.display = 'none';
+      screen.style.display = 'flex';
+    }
+  });
+})();
+
+function verifyOrder(){
+  const input = document.getElementById('orderInput').value.trim();
+  const errEl = document.getElementById('orderErr');
+
+  // التحقق: رقم الطلب يجب أن يكون أرقام فقط، 6 خانات على الأقل
+  if(!input || !/^\d{6,12}$/.test(input)){
+    errEl.textContent = '⚠️ رقم الطلب يجب أن يكون بين 6-12 رقم';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // حفظ في localStorage
+  localStorage.setItem('lamst_order', input);
+
+  // إخفاء شاشة التحقق وإظهار الموقع
+  document.getElementById('orderScreen').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+
+  // تحديث الـ orderId في الـ state
+  S.orderId = input;
+}
+
+const S={groom:'',bride:'',host:'',hijri:'',gregDate:'',gregTime:'',gregDay:'',venue:'',city:'',noPhone:false,style:'royal-gold',used:0,max:6,paid:false,callyUrl:null,qrUrl:null,musicPlaying:false,orderId:localStorage.getItem('lamst_order')||'guest'};
 
 // ── Particles ──
 (function(){const c=document.getElementById('particles');for(let i=0;i<30;i++){const p=document.createElement('div');p.className='particle';p.style.left=Math.random()*100+'%';p.style.setProperty('--dur',(6+Math.random()*10)+'s');p.style.setProperty('--x',(Math.random()*60-30)+'px');p.style.animationDelay=Math.random()*8+'s';c.appendChild(p);}})();
@@ -644,5 +713,6 @@ function reset(){if(!confirm('متأكد؟ سيتم مسح كل البيانات
 
 updateAtt();
 </script>
+</div><!-- /mainContent -->
 </body>
 </html>
