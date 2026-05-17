@@ -304,15 +304,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--ge);min-height:100
       <div class="empty"><div class="empty-icon">❦</div><div class="empty-text">اضغط زر التوليد<br>لإنشاء المخطوطة</div></div>
     </div>
     <button class="btn" id="genBtn" onclick="generate()">✦ توليد المخطوطة</button>
-    <button class="btn-ghost" id="acceptBtn" style="display:none" onclick="accept()">قبول المخطوطة ومعاينة الدعوة ✓</button>
+    <button class="btn-ghost" id="acceptBtn" style="display:none" onclick="accept()">
+      قبول المخطوطة ومعاينة الدعوة ✓
+      <span id="previewCounter" style="font-size:11px;opacity:.6;margin-right:6px"></span>
+    </button>
     <button class="btn-ghost" onclick="goStep(1)" style="opacity:.5;font-size:13px">← تعديل البيانات</button>
   </div>
   <div class="upgrade" id="upgradeBox" style="display:none">
-    <h3>استنفدت محاولاتك المجانية</h3>
-    <div class="upgrade-desc">احصل على <strong style="color:var(--gold)">3 محاولات إضافية</strong></div>
-    <div class="upgrade-price">15<small> ريال</small></div>
-    <button class="btn" onclick="buyExtra()">شراء 3 محاولات إضافية</button>
-    <button class="btn-ghost" onclick="support()">التواصل مع الدعم 💬</button>
+    <div style="font-size:32px;margin-bottom:8px">⚜️</div>
+    <h3>انتهت محاولات التوليد</h3>
+    <div class="upgrade-desc">تواصل معنا على واتساب للحصول على محاولات إضافية</div>
+    <button class="btn" onclick="support()" style="margin-top:8px">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="vertical-align:middle;margin-left:6px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.091.539 4.074 1.492 5.798L0 24l6.384-1.469A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.369l-.36-.214-3.726.857.886-3.625-.234-.373A9.818 9.818 0 012.182 12C2.182 6.578 6.578 2.182 12 2.182S21.818 6.578 21.818 12 17.422 21.818 12 21.818z"/></svg>
+      تواصل معنا على واتساب
+    </button>
   </div>
 </div>
 
@@ -401,7 +406,11 @@ function verifyOrder(){
   S.orderId = input;
 }
 
-const S={groom:'',bride:'',host:'',hijri:'',gregDate:'',gregTime:'',gregDay:'',venue:'',city:'',noPhone:false,style:'royal-gold',used:0,max:6,paid:false,callyUrl:null,qrUrl:null,musicPlaying:false,orderId:localStorage.getItem('lamst_order')||'guest'};
+// نظام مرات المعاينة
+const _previewsUsed = parseInt(localStorage.getItem('lamst_previews')||'0');
+const _callyUrlSaved = localStorage.getItem('lamst_cally')||null;
+
+const S={groom:'',bride:'',host:'',hijri:'',gregDate:'',gregTime:'',gregDay:'',venue:'',city:'',noPhone:false,style:'royal-gold',used:0,max:6,paid:false,callyUrl:_callyUrlSaved,qrUrl:null,musicPlaying:false,orderId:localStorage.getItem('lamst_order')||'guest',previewsUsed:_previewsUsed,maxPreviews:3};
 
 // ── Particles ──
 (function(){const c=document.getElementById('particles');for(let i=0;i<30;i++){const p=document.createElement('div');p.className='particle';p.style.left=Math.random()*100+'%';p.style.setProperty('--dur',(6+Math.random()*10)+'s');p.style.setProperty('--x',(Math.random()*60-30)+'px');p.style.animationDelay=Math.random()*8+'s';c.appendChild(p);}})();
@@ -509,6 +518,15 @@ function updateMono(){
 function selStyle(el,name){document.querySelectorAll('.style-card').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.style=name;updateMono();}
 
 // ── Attempts ──
+function updatePreviewCounter(){
+  const counter = document.getElementById('previewCounter');
+  if(counter){
+    const rem = S.maxPreviews - S.previewsUsed;
+    if(rem <= 0) counter.textContent = '(انتهت مرات التعديل)';
+    else counter.textContent = `(متبقي ${rem} من ${S.maxPreviews})`;
+  }
+}
+
 function updateAtt(){for(let i=1;i<=S.max;i++){const d=document.getElementById('d'+i);if(d)d.classList.toggle('used',i<=S.used);}const rem=S.max-S.used;document.getElementById('remCount').textContent=Math.max(0,rem);const btn=document.getElementById('genBtn'),upg=document.getElementById('upgradeBox');if(rem<=0&&!S.paid){btn.disabled=true;upg.style.display='block';}else{btn.disabled=false;upg.style.display='none';}}
 
 // ── Step 2 ──
@@ -550,6 +568,7 @@ async function generate(){
     S.callyUrl=canvas.toDataURL('image/png');
     box.innerHTML=`<img src="${S.callyUrl}" alt="مخطوطة">`;
     document.getElementById('acceptBtn').style.display='block';
+    updatePreviewCounter();
     toast('✦ تم توليد المخطوطة');
   }catch(e){console.error(e);toast('⚠️ خطأ');S.used--;updateAtt();}
   document.getElementById('genBtn').disabled=(S.used>=S.max&&!S.paid);
@@ -708,7 +727,10 @@ function generateQRModal(){
 
 // ── Upgrade/Support ──
 function buyExtra(){toast('جاري التحويل لصفحة الدفع...');setTimeout(()=>{S.paid=true;S.max+=3;const row=document.querySelector('.attempts-row');row.querySelectorAll('.dot').forEach(d=>d.remove());for(let i=1;i<=S.max;i++){const d=document.createElement('div');d.className='dot'+(S.used>=i?' used':'');d.id='d'+i;row.appendChild(d);}updateAtt();toast('✦ تمت إضافة 3 محاولات');},1500);}
-function support(){const msg=`السلام عليكم،\nأحتاج مساعدة في دعوة الزفاف\nرقم الطلب: ${S.orderId}`;window.open(`https://wa.me/966536213415?text=${encodeURIComponent(msg)}`,'_blank');}
+function support(){
+  const msg = `السلام عليكم 👋\nأحتاج مساعدة في تصميم دعوة الزفاف\nرقم طلبي: ${S.orderId}`;
+  window.open('https://wa.me/966536213415?text='+encodeURIComponent(msg),'_blank');
+}
 function reset(){if(!confirm('متأكد؟ سيتم مسح كل البيانات.'))return;Object.assign(S,{groom:'',bride:'',host:'',hijri:'',gregDate:'',gregTime:'',gregDay:'',venue:'',city:'',noPhone:false,style:'royal-gold',used:0,max:3,paid:false,callyUrl:null,qrUrl:null});document.getElementById('upgradeBox').style.display='none';document.getElementById('acceptBtn').style.display='none';document.getElementById('qrBtnFloat').style.display='none';document.getElementById('qrInlineWrap').style.display='none';document.getElementById('mapsUrlInline').value='';document.getElementById('resultBox').innerHTML='<div class="empty"><div class="empty-icon">❦</div><div class="empty-text">اضغط زر التوليد</div></div>';updateAtt();goStep(1);}
 
 updateAtt();
