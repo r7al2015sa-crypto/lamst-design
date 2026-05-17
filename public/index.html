@@ -589,7 +589,31 @@ function loadData(){
     if(localStorage.getItem('lamst_locked')==='1'){
       setTimeout(lockNames, 100);
     }
+    // أخفِ زر التعديل لو استُخدم مسبقاً
+    if(localStorage.getItem('lamst_unlocked')==='1'){
+      setTimeout(()=>{
+        const btn=document.getElementById('unlockBtn');
+        if(btn) btn.style.display='none';
+      }, 150);
+    }
   }catch(e){console.error(e);}
+}
+
+
+// ── فتح القفل مرة واحدة فقط ──
+function unlockNamesOnce(){
+  if(localStorage.getItem('lamst_unlocked')==='1'){
+    toast('⚠️ لقد استخدمت خيار التعديل مسبقاً', 3000);
+    return;
+  }
+  ['groomName','brideName','hostName'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.removeAttribute('readonly'); el.classList.remove('locked'); }
+  });
+  localStorage.setItem('lamst_unlocked','1');
+  const btn=document.getElementById('unlockBtn');
+  if(btn) btn.style.display='none';
+  toast('✦ يمكنك تعديل الأسماء الآن — مرة واحدة فقط', 3500);
 }
 
 // ── Step 2 ──
