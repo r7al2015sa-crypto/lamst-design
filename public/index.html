@@ -26,6 +26,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--ge);min-height:100
 .music-btn{position:fixed;bottom:22px;right:20px;z-index:100;width:44px;height:44px;border-radius:50%;background:rgba(15,11,6,.9);border:1px solid rgba(201,169,97,.4);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;box-shadow:0 4px 15px rgba(0,0,0,.5)}
 .music-btn:hover{border-color:var(--gold);background:rgba(201,169,97,.1)}
 .music-btn svg{width:20px;height:20px;fill:var(--gold)}
+.input.locked{background:rgba(201,169,97,.06)!important;border-color:rgba(201,169,97,.4)!important;color:var(--gold-l)!important;cursor:not-allowed!important;opacity:.85}
+.lock-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--gold-d);float:left;margin-top:2px}
+.lock-badge svg{width:12px;height:12px;fill:var(--gold-d)}
 .qr-btn-float{position:fixed;bottom:22px;left:20px;z-index:100;display:none;align-items:center;gap:8px;padding:10px 16px;background:rgba(15,11,6,.9);border:1px solid rgba(201,169,97,.4);border-radius:30px;color:var(--gold);font-family:var(--ge);font-size:13px;cursor:pointer;transition:all .3s;box-shadow:0 4px 15px rgba(0,0,0,.5)}
 .qr-btn-float:hover{border-color:var(--gold);background:rgba(201,169,97,.1)}
 .qr-btn-float svg{width:18px;height:18px;fill:var(--gold)}
@@ -224,7 +227,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--ge);min-height:100
     <div class="divider"><div class="line"></div><div class="orn">❦</div><div class="line"></div></div>
   </div>
   <div class="card">
-    <div class="field"><label class="field-label">اسم العريس</label><input type="text" id="groomName" class="input" placeholder="مثال: علي بن محمد الشامان"></div>
+    <div class="field">
+      <label class="field-label">
+        اسم العريس
+        <span id="nameLockBadge" class="lock-badge" style="display:none">
+          <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+          الأسماء مقفولة • دعوة واحدة لكل طلب
+        </span>
+      </label>
+      <input type="text" id="groomName" class="input" placeholder="مثال: علي بن محمد الشامان">
+    </div>
     <div class="field"><label class="field-label">اسم العروس</label><input type="text" id="brideName" class="input" placeholder="مثال: نورة بنت خالد الشمري"></div>
     <div class="field"><label class="field-label">والد العريس (المُشرّف بالدعوة)</label><input type="text" id="hostName" class="input" placeholder="محمد بن هليل بن علي الشامان"></div>
     <div class="divider"><div class="line"></div><div class="orn">❦</div><div class="line"></div></div>
@@ -573,17 +585,46 @@ function loadData(){
       updateMono();
       toast('✦ تم استرجاع بياناتك', 3000);
     }
+    // أعد القفل لو كان مقفولاً من قبل
+    if(localStorage.getItem('lamst_locked')==='1'){
+      setTimeout(lockNames, 100);
+    }
   }catch(e){console.error(e);}
 }
 
 // ── Step 2 ──
+function lockNames(){
+  // قفل الأسماء الثلاثة بعد البدء
+  ['groomName','brideName','hostName'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.setAttribute('readonly','true');
+      el.classList.add('locked');
+    }
+  });
+  // إظهار شارة القفل
+  document.getElementById('nameLockBadge').style.display='flex';
+}
+
 function toStep2(){
-  S.groom=document.getElementById('groomName').value.trim();
+  // لو الأسماء مقفولة — استخدم القيم المحفوظة
+  const groomEl=document.getElementById('groomName');
+  const alreadyLocked=groomEl.classList.contains('locked');
+
+  S.groom=groomEl.value.trim();
   S.bride=document.getElementById('brideName').value.trim();
   S.host=document.getElementById('hostName').value.trim();
   S.venue=document.getElementById('venueName').value.trim();
   S.city=document.getElementById('venueCity').value.trim();
+
   if(!S.groom||!S.bride){toast('⚠️ أدخل اسم العريس والعروس');return;}
+
+  // قفل الأسماء عند أول انتقال
+  if(!alreadyLocked){
+    lockNames();
+    localStorage.setItem('lamst_locked','1');
+  }
+
   saveData();
   document.getElementById('namesDisplay').textContent=S.groom+' و '+S.bride;
   updateMono();goStep(2);
