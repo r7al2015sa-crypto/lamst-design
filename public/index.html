@@ -573,7 +573,46 @@ async function generate(){
   }catch(e){console.error(e);toast('⚠️ خطأ');S.used--;updateAtt();}
   document.getElementById('genBtn').disabled=(S.used>=S.max&&!S.paid);
 }
-function accept(){goStep(3);}
+function accept(){
+  // قراءة العداد من localStorage مباشرة (الأكثر موثوقية)
+  const used = parseInt(localStorage.getItem('lamst_previews')||'0');
+  const MAX = 3;
+
+  if(used >= MAX){
+    toast('🔒 انتهت مرات التعديل — تواصل معنا على واتساب', 5000);
+    return;
+  }
+
+  // زيادة العداد وحفظه
+  const newUsed = used + 1;
+  localStorage.setItem('lamst_previews', newUsed);
+  S.previewsUsed = newUsed;
+
+  // تحديث العداد في الزر
+  updatePreviewCounter();
+
+  // تحذير قبل آخر مرة
+  if(newUsed === MAX - 1){
+    setTimeout(()=>toast('⚠️ تنبيه: تبقت لك مرة تعديل واحدة فقط', 4000), 600);
+  }
+
+  // انتقل للمعاينة
+  goStep(3);
+
+  // لو آخر مرة — قفل أزرار التعديل
+  if(newUsed >= MAX){
+    setTimeout(()=>{
+      document.querySelectorAll('#step3 .btn-ghost').forEach(btn=>{
+        if(!btn.classList.contains('danger')){
+          btn.disabled = true;
+          btn.style.opacity = '0.3';
+          btn.style.cursor = 'not-allowed';
+        }
+      });
+      toast('🔒 انتهت مرات التعديل — يمكنك التحميل فقط', 5000);
+    }, 600);
+  }
+}
 
 // ── Canvas Render ──
 async function renderCanvas(){
