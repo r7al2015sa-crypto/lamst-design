@@ -481,6 +481,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('#hijriDate')&&!e.tar
 // ── QR inline ──
 let qrTimer=null;
 function handleQRInput(val){
+  S.mapsUrl = val;
   clearTimeout(qrTimer);
   const wrap=document.getElementById('qrInlineWrap');
   if(!val||val.length<10){wrap.style.display='none';S.qrUrl=null;return;}
@@ -515,7 +516,7 @@ function updateMono(){
   document.getElementById('monoSep').innerHTML=`<img src="${MONO_BASE}/${dir}/separator.png" alt="و" style="max-width:44px;max-height:60px;object-fit:contain" onerror="this.outerHTML='<span class=\\'fb\\' style=\\'font-size:26px;color:var(--gold-d)\\'>و</span>'">`;
   document.getElementById('monoB').innerHTML=`<img src="${MONO_BASE}/${dir}/${c2}.png" alt="${c2}" style="max-width:110px;max-height:65px;object-fit:contain" onerror="this.outerHTML='<span class=\\'fb\\'>${c2}</span>'">`;
 }
-function selStyle(el,name){document.querySelectorAll('.style-card').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.style=name;updateMono();}
+function selStyle(el,name){document.querySelectorAll('.style-card').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');S.style=name;updateMono();saveData();}
 
 // ── Attempts ──
 function updatePreviewCounter(){
@@ -529,6 +530,52 @@ function updatePreviewCounter(){
 
 function updateAtt(){for(let i=1;i<=S.max;i++){const d=document.getElementById('d'+i);if(d)d.classList.toggle('used',i<=S.used);}const rem=S.max-S.used;document.getElementById('remCount').textContent=Math.max(0,rem);const btn=document.getElementById('genBtn'),upg=document.getElementById('upgradeBox');if(rem<=0&&!S.paid){btn.disabled=true;upg.style.display='block';}else{btn.disabled=false;upg.style.display='none';}}
 
+// ── حفظ واسترجاع البيانات من localStorage ──
+function saveData(){
+  localStorage.setItem('lamst_data', JSON.stringify({
+    groom:S.groom, bride:S.bride, host:S.host,
+    hijri:S.hijri, gregDate:S.gregDate, gregTime:S.gregTime, gregDay:S.gregDay,
+    venue:S.venue, city:S.city, noPhone:S.noPhone, style:S.style,
+    used:S.used, mapsUrl:S.mapsUrl||'', qrUrl:S.qrUrl||''
+  }));
+}
+
+function loadData(){
+  try{
+    const raw=localStorage.getItem('lamst_data');
+    if(!raw) return;
+    const d=JSON.parse(raw);
+    Object.assign(S,d);
+    if(d.groom) document.getElementById('groomName').value=d.groom;
+    if(d.bride) document.getElementById('brideName').value=d.bride;
+    if(d.host)  document.getElementById('hostName').value=d.host;
+    if(d.venue) document.getElementById('venueName').value=d.venue;
+    if(d.city)  document.getElementById('venueCity').value=d.city;
+    if(d.hijri) document.getElementById('hijriDate').value=d.hijri+' هـ';
+    if(d.noPhone) document.getElementById('phoneBox').classList.add('checked');
+    if(d.mapsUrl && d.mapsUrl.length>5){
+      document.getElementById('mapsUrlInline').value=d.mapsUrl;
+      if(d.qrUrl){
+        document.getElementById('qrInlineImg').src=d.qrUrl;
+        document.getElementById('qrInlineWrap').style.display='block';
+      }
+    }
+    // استرجاع الستايل
+    if(d.style){
+      document.querySelectorAll('.style-card').forEach(c=>c.classList.remove('sel'));
+      const cards=document.querySelectorAll('.style-card');
+      const idx={'royal-gold':0,'silver-classic':1,'violet-scent':2,'pink-spring':3}[d.style]||0;
+      if(cards[idx]) cards[idx].classList.add('sel');
+    }
+    if(d.used) updateAtt();
+    if(d.groom&&d.bride){
+      document.getElementById('namesDisplay').textContent=d.groom+' و '+d.bride;
+      updateMono();
+      toast('✦ تم استرجاع بياناتك', 3000);
+    }
+  }catch(e){console.error(e);}
+}
+
 // ── Step 2 ──
 function toStep2(){
   S.groom=document.getElementById('groomName').value.trim();
@@ -537,6 +584,7 @@ function toStep2(){
   S.venue=document.getElementById('venueName').value.trim();
   S.city=document.getElementById('venueCity').value.trim();
   if(!S.groom||!S.bride){toast('⚠️ أدخل اسم العريس والعروس');return;}
+  saveData();
   document.getElementById('namesDisplay').textContent=S.groom+' و '+S.bride;
   updateMono();goStep(2);
 }
@@ -759,7 +807,7 @@ function generateQRModal(){
   const val=document.getElementById('mapsModal').value.trim();
   if(!val){toast('⚠️ أدخل رابط الموقع');return;}
   const url=`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(val)}&color=C9A961&bgcolor=000000&qzone=2&format=png`;
-  S.qrUrl=url;S.mapsUrl=val;
+  S.qrUrl=url;S.mapsUrl=val;saveData();
   document.getElementById('qrModalImg').src=url;document.getElementById('qrModalResult').style.display='block';
   toast('✦ تم توليد الباركود');closeQR();renderCanvas();
 }
@@ -773,6 +821,7 @@ function support(){
 function reset(){if(!confirm('متأكد؟ سيتم مسح كل البيانات.'))return;Object.assign(S,{groom:'',bride:'',host:'',hijri:'',gregDate:'',gregTime:'',gregDay:'',venue:'',city:'',noPhone:false,style:'royal-gold',used:0,max:3,paid:false,callyUrl:null,qrUrl:null});document.getElementById('upgradeBox').style.display='none';document.getElementById('acceptBtn').style.display='none';document.getElementById('qrBtnFloat').style.display='none';document.getElementById('qrInlineWrap').style.display='none';document.getElementById('mapsUrlInline').value='';document.getElementById('resultBox').innerHTML='<div class="empty"><div class="empty-icon">❦</div><div class="empty-text">اضغط زر التوليد</div></div>';updateAtt();goStep(1);}
 
 updateAtt();
+loadData();
 
 // ════════════════════════════════════════
 // حماية المحتوى
